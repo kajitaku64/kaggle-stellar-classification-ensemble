@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+.mplconfig/
+.pycache_tmp/
+.DS_Store
+
+input/
+data/
+output/

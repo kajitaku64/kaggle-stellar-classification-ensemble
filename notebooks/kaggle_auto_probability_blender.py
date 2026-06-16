@@ -132,15 +132,11 @@ def discover_probability_pairs(n_train: int, n_test: int):
         if key in test_files:
             pairs.append((key, oof_path, test_files[key]))
             continue
-        # forgiving match for notebook folders where names differ slightly
         for test_key, test_path in test_files.items():
             if key in test_key or test_key in key:
                 pairs.append((key, oof_path, test_path))
                 break
 
-    # Known public notebook artifact names. Some notebooks use short names such
-    # as oof_lgb.npy / test_lgb.npy, which are easy to miss if a folder contains
-    # several unrelated files. Add these pairs explicitly when present.
     known_pairs = {
         "lgb_public": ("oof_lgb.npy", "test_lgb.npy"),
         "mlp_public": ("oof_mlp.npy", "test_mlp.npy"),
@@ -316,9 +312,6 @@ print(f"saved submission_{final_name}.csv")
 print(sub["class"].value_counts())
 
 
-# Final polish: hard-vote candidates.
-# These are riskier than probability blending, but sometimes work better on
-# public LB because they only alter rows where models disagree.
 label_mat = np.column_stack([p.argmax(axis=1) for p in test_list])
 model_scores = np.array([score(p, y) for p in oof_list], dtype=np.float64)
 model_weights = np.exp((model_scores - model_scores.max()) / 0.0005)
@@ -361,9 +354,6 @@ print(
 print(hard_conservative["class"].value_counts())
 
 
-# Public LB probe candidates.
-# The OOF optimum is already very tight, so these files intentionally make
-# small class-prior and sharpness moves around the selected probability blend.
 def adjusted_proba(p: np.ndarray, qso_mult: float, star_mult: float, gamma_mult: float) -> np.ndarray:
     mult = np.array([1.0, qso_mult, star_mult], dtype=np.float64)
     return normalize((p**gamma_mult) * mult)
@@ -385,18 +375,12 @@ for qso_mult in [0.970, 0.985, 1.000, 1.015, 1.030, 1.045]:
                 )
             )
 
-# Save focused Public LB probes in submit order.
 probe_grid = sorted(probe_grid, key=lambda x: -x[0])
 submit_probes = [
-    # Safest QSO-up candidates. These move enough rows to matter without
-    # drifting far from the OOF optimum.
     ("submit_01_qso_up_safe", 1.030, 1.000, 0.985),
     ("submit_02_qso_up_mid", 1.045, 1.000, 1.000),
-    # Different direction: slightly fewer QSO/STAR with a sharper distribution.
     ("submit_03_star_down_alt", 0.990, 0.970, 1.010),
-    # More aggressive STAR-down candidate.
     ("submit_04_star_down_attack", 1.025, 0.965, 1.000),
-    # Keep the previous conservative hard vote as a named submit candidate too.
     ("submit_05_hard_vote_conservative", None, None, None),
 ]
 

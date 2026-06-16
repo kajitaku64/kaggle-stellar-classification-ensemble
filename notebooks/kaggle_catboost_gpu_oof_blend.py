@@ -81,7 +81,6 @@ def add_features(df: pd.DataFrame) -> pd.DataFrame:
     out = add_discussion_categories(df)
     eps = 1e-6
 
-    # 色指数
     color_pairs = [
         ("u", "g"),
         ("g", "r"),
@@ -96,14 +95,12 @@ def add_features(df: pd.DataFrame) -> pd.DataFrame:
     for a, b in color_pairs:
         out[f"{a}_{b}_color"] = (out[a] - out[b]).astype(np.float32)
 
-    # 赤方偏移との組み合わせ
     one_plus_z = 1.0 + out["redshift"].astype(float)
     for a, b in color_pairs:
         col = f"{a}_{b}_color"
         out[f"{col}_rest"] = (out[col] / one_plus_z).astype(np.float32)
         out[f"{col}_x_redshift"] = (out[col] * out["redshift"]).astype(np.float32)
 
-    # 明るさ集計
     bands = ["u", "g", "r", "i", "z"]
     out["mag_mean"] = out[bands].mean(axis=1).astype(np.float32)
     out["mag_std"] = out[bands].std(axis=1).astype(np.float32)
@@ -111,7 +108,6 @@ def add_features(df: pd.DataFrame) -> pd.DataFrame:
     out["mag_max"] = out[bands].max(axis=1).astype(np.float32)
     out["mag_range"] = (out["mag_max"] - out["mag_min"]).astype(np.float32)
 
-    # 位置情報
     alpha_rad = np.deg2rad(out["alpha"].astype(float))
     delta_rad = np.deg2rad(out["delta"].astype(float))
     out["alpha_sin"] = np.sin(alpha_rad).astype(np.float32)
@@ -122,11 +118,9 @@ def add_features(df: pd.DataFrame) -> pd.DataFrame:
     out["sphere_y"] = (out["delta_cos"] * out["alpha_sin"]).astype(np.float32)
     out["sphere_z"] = out["delta_sin"].astype(np.float32)
 
-    # 銀河系列の境界
     out["green_valley_margin"] = (out["u"] - out["r"] - 2.2).astype(np.float32)
     out["green_valley_abs_margin"] = np.abs(out["green_valley_margin"]).astype(np.float32)
 
-    # カテゴリ相互作用
     out["spectral_galaxy_interaction"] = (
         out["spectral_type"].astype(str) + "_" + out["galaxy_population"].astype(str)
     )
@@ -137,7 +131,6 @@ def add_features(df: pd.DataFrame) -> pd.DataFrame:
                 "z_0.5_1", "z_1_2", "z_2_3", "z_3_5", "z_5_plus"],
     ).astype(str)
 
-    # CatBoostに渡しやすいように無限大を処理
     for col in out.columns:
         if pd.api.types.is_numeric_dtype(out[col]):
             out[col] = out[col].replace([np.inf, -np.inf], np.nan).fillna(0)
@@ -258,7 +251,6 @@ print("saved CatBoost files")
 print(sub["class"].value_counts())
 
 
-# 外部5モデル確率がInputにある場合だけ、簡易blend候補も作る
 external = load_external_proba()
 if external is not None:
     ext_oof, ext_test = external

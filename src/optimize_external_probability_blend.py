@@ -137,8 +137,6 @@ def main() -> None:
         print(f"  {name:12s}: {score(oof_proba, y):.6f}")
     print(f"external baseline: {score(external_oof, y):.6f}")
 
-    # 1) External-only calibration. This is the lowest-risk candidate because it
-    # only changes rows near the current decision boundaries.
     best = (-1.0, 1.0, 1.0, 1.0)
     for gamma in np.arange(0.90, 1.101, 0.05):
         powered = normalize_proba(external_oof**gamma)
@@ -166,8 +164,6 @@ def main() -> None:
         external_test_pred,
     )
 
-    # 2) Tiny probability blend around the external model. The search is
-    # intentionally constrained: local models are allowed to help only a little.
     model_names = [name for name, _, _ in loaded]
     oof_stack = np.stack([oof for _, oof, _ in loaded], axis=0)
     test_stack = np.stack([test for _, _, test in loaded], axis=0)
@@ -212,8 +208,6 @@ def main() -> None:
         external_test_pred,
     )
 
-    # 3) Meta-stacker diagnostic. This usually changes more rows, so treat it as
-    # a higher-risk candidate even if OOF looks good.
     x_oof = np.hstack([oof for _, oof, _ in loaded])
     x_test = np.hstack([test for _, _, test in loaded])
     best_lr = (-1.0, None, None, None)

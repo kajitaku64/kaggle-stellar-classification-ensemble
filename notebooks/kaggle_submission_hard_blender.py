@@ -44,10 +44,6 @@ def find_file(name: str) -> Path:
 
 
 def parse_score(path: Path) -> float | None:
-    # Accept names like:
-    # 0.97092.csv
-    # 0.97044_external5.csv
-    # submission_0.97044.csv
     m = re.search(r"(0\.\d{4,6})", path.stem)
     if not m:
         return None
@@ -160,8 +156,6 @@ for mode in ["softmax", "shifted"]:
         print(f"  weight={weight:.5f} score={score:.5f} {name}")
     save_submission(f"submission_scored_hard_vote_{mode}.csv", ids, pred)
 
-# Top-k blend: sometimes lower-scoring near-duplicates hurt. Keep only strongest
-# submissions by score, then vote.
 for k in [3, 5, 8, 12]:
     if len(scores) < k:
         continue
